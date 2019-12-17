@@ -3,6 +3,7 @@ package accesslog
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -26,6 +27,15 @@ func (f *CommonLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		timestamp = v.(time.Time).Format(commonLogTimeFormat)
 	} else if v, ok := entry.Data[StartLocal]; ok {
 		timestamp = v.(time.Time).Local().Format(commonLogTimeFormat)
+		loc, err := time.LoadLocation(os.Getenv("TZ"))
+		if err != nil {
+			return b.Bytes(), err
+		}
+		if loc == time.UTC {
+			timestamp = v.(time.Time).Local().Format(commonLogTimeFormat)
+		} else {
+			timestamp = v.(time.Time).In(loc).Format(commonLogTimeFormat)
+		}
 	}
 
 	var elapsedMillis int64
